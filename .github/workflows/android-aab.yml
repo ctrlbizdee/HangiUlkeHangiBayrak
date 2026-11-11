@@ -37,6 +37,7 @@ jobs:
           npx cap add android
           npx cap sync android
           sed -i 's/minSdkVersion = 23/minSdkVersion = 24/' android/variables.gradle
+          sed -i 's/applicationId ".*"/applicationId "com.ctrlbizdee.hangiulkehangibayrak"/' android/app/build.gradle
       - name: Restore signing keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
