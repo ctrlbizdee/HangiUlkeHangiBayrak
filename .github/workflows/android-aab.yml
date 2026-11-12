@@ -24,22 +24,29 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_HOME"
           test -d "$ANDROID_HOME"
           test -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" || command -v sdkmanager
+      - name: Install Android API 36 SDK
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
       - name: Install dependencies
         run: npm install --no-audit --no-fund
       - name: Generate Android project
         run: |
           npx cap add android
           npx cap sync android
-          # Google Play automatic protection requires minimum SDK 24.
+          # Google Play requires min SDK 24 and target API 36.
+          # Capacitor uses variables.gradle for SDK levels.
+          sed -i -E 's/compileSdkVersion[[:space:]]*=[[:space:]]*[0-9]+/compileSdkVersion = 36/g; s/targetSdkVersion[[:space:]]*=[[:space:]]*[0-9]+/targetSdkVersion = 36/g' android/variables.gradle
+          sed -i -E 's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 36/g; s/targetSdkVersion[[:space:]]+[0-9]+/targetSdkVersion 36/g; s/compileSdk[[:space:]]+[0-9]+/compileSdk 36/g; s/targetSdk[[:space:]]+[0-9]+/targetSdk 36/g' android/app/build.gradle
           if [ -f android/variables.gradle ]; then
             sed -i -E 's/minSdkVersion[[:space:]]*=[[:space:]]*[0-9]+/minSdkVersion = 24/g' android/variables.gradle
           fi
           sed -i -E 's/minSdkVersion[[:space:]]+[0-9]+/minSdkVersion 24/g; s/minSdk[[:space:]]+[0-9]+/minSdk 24/g' android/app/build.gradle
           echo "SDK settings:"
-          grep -nE 'minSdkVersion|minSdk ' android/variables.gradle android/app/build.gradle || true
+          grep -nE 'minSdkVersion|minSdk |targetSdkVersion|targetSdk |compileSdkVersion|compileSdk ' android/variables.gradle android/app/build.gradle || true
           sed -i -E 's/applicationId[[:space:]]+"[^"]+"/applicationId "com.ctrlbizdee.hangiulkehangibayrak"/' android/app/build.gradle
-          sed -i -E 's/versionCode [0-9]+/versionCode 10/' android/app/build.gradle
-          sed -i -E 's/versionName "[^"]+"/versionName "1.0.10"/' android/app/build.gradle
+          sed -i -E 's/versionCode [0-9]+/versionCode 11/' android/app/build.gradle
+          sed -i -E 's/versionName "[^"]+"/versionName "1.0.11"/' android/app/build.gradle
       - name: Set store-matching Android launcher icons
         run: |
           python3 -m pip install --user Pillow
@@ -106,6 +113,10 @@ jobs:
           EOF2
           chmod +x gradlew
           ./gradlew bundleRelease
+          # Verify the generated AAB manifest before publishing artifact.
+          AAB=$(find app/build/outputs/bundle/release -maxdepth 1 -name '*.aab' -print -quit)
+          test -n "$AAB"
+          echo "Generated bundle: $AAB"
       - name: Upload signed AAB
         uses: actions/upload-artifact@v4
         with:
