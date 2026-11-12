@@ -54,11 +54,7 @@ jobs:
               art=src.resize((inner,inner),Image.Resampling.LANCZOS)
               fg.alpha_composite(art,((size-inner)//2,(size-inner)//2))
               fg.save(folder/'ic_launcher_foreground.png')
-          # Capacitor default adaptive icon uses @color/ic_launcher_background.
-          # Ensure a consistent light background for the supplied icon.
-          values=res/'values'
-          values.mkdir(parents=True,exist_ok=True)
-          (values/'icon_background.xml').write_text('<?xml version="1.0" encoding="utf-8"?><resources><color name="ic_launcher_background">#FFFFFF</color></resources>')
+          # Capacitor already defines ic_launcher_background; do not add a duplicate.
           PY
       - name: Restore signing keystore
         env:
