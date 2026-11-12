@@ -1,0 +1,110 @@
+name: Android AAB (signed build)
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Generate Android project
+        run: |
+          npx cap add android
+          npx cap sync android
+          sed -i 's/minSdkVersion = 23/minSdkVersion = 24/' android/variables.gradle
+          sed -i 's/targetSdkVersion = 35/targetSdkVersion = 36/' android/variables.gradle
+          sed -i 's/compileSdkVersion = 35/compileSdkVersion = 36/' android/variables.gradle
+          sed -i 's/applicationId ".*"/applicationId "com.ctrlbizdee.hangiulkehangibayrak"/' android/app/build.gradle
+          sed -i -E 's/versionCode [0-9]+/versionCode 3/' android/app/build.gradle
+          sed -i -E 's/versionName "[^"]+"/versionName "1.0.2"/' android/app/build.gradle
+      - name: Set store-matching Android launcher icons
+        run: |
+          python3 -m pip install --user Pillow
+          python3 - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          src=Image.open('assets/icon.png').convert('RGBA')
+          res=Path('android/app/src/main/res')
+          densities={'mdpi':48,'hdpi':72,'xhdpi':96,'xxhdpi':144,'xxxhdpi':192}
+          for d,size in densities.items():
+              folder=res/f'mipmap-{d}'
+              folder.mkdir(parents=True,exist_ok=True)
+              icon=src.resize((size,size),Image.Resampling.LANCZOS)
+              icon.save(folder/'ic_launcher.png')
+              icon.save(folder/'ic_launcher_round.png')
+              # Adaptive foreground: safe-area padding to avoid cropping flags.
+              fg=Image.new('RGBA',(size,size),(0,0,0,0))
+              inner=int(size*0.68)
+              art=src.resize((inner,inner),Image.Resampling.LANCZOS)
+              fg.alpha_composite(art,((size-inner)//2,(size-inner)//2))
+              fg.save(folder/'ic_launcher_foreground.png')
+          # Capacitor default adaptive icon uses @color/ic_launcher_background.
+          # Ensure a consistent light background for the supplied icon.
+          values=res/'values'
+          values.mkdir(parents=True,exist_ok=True)
+          (values/'icon_background.xml').write_text('<?xml version="1.0" encoding="utf-8"?><resources><color name="ic_launcher_background">#FFFFFF</color></resources>')
+          PY
+      - name: Restore signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$KEYSTORE_BASE64"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/release.jks
+      - name: Build signed release AAB
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          cat > signing.properties <<EOF2
+          storeFile=release.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF2
+          cat >> app/build.gradle <<'EOF2'
+          def signingProps = new Properties()
+          signingProps.load(new FileInputStream(rootProject.file("signing.properties")))
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file(signingProps['storeFile'])
+                      storePassword signingProps['storePassword']
+                      keyAlias signingProps['keyAlias']
+                      keyPassword signingProps['keyPassword']
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }
+              }
+          }
+          EOF2
+          chmod +x gradlew
+          ./gradlew bundleRelease
+      - name: Upload signed AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-aab-for-google-play
+          path: android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
