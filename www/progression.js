@@ -46,7 +46,7 @@ const progressCopy = {
       loadError: "Yüklenemedi",
       signOut: "Oturumu kapat",
       retry: "Yeniden dene",
-      topTen: "Dünya İlk 10",
+      topThree: "Dünya İlk 3",
       leaderLoading: "Sıralama yükleniyor…",
       leaderEmpty: "Henüz sıralamada oyuncu yok."
     },
@@ -70,7 +70,7 @@ const progressCopy = {
       loadError: "Could not load",
       signOut: "Sign out",
       retry: "Retry",
-      topTen: "World Top 10",
+      topThree: "World Top 3",
       leaderLoading: "Loading leaderboard…",
       leaderEmpty: "No ranked players yet."
     },
@@ -94,7 +94,7 @@ const progressCopy = {
       loadError: "Не удалось загрузить",
       signOut: "Выйти",
       retry: "Повторить",
-      topTen: "Мировой топ-10",
+      topThree: "Мировой топ-3",
       leaderLoading: "Загрузка рейтинга…",
       leaderEmpty: "В рейтинге пока нет игроков."
     },
@@ -118,7 +118,7 @@ const progressCopy = {
       loadError: "تعذر التحميل",
       signOut: "تسجيل الخروج",
       retry: "إعادة المحاولة",
-      topTen: "أفضل 10 لاعبين عالميًا",
+      topThree: "أفضل 3 لاعبين عالميًا",
       leaderLoading: "جارٍ تحميل الترتيب…",
       leaderEmpty: "لا يوجد لاعبون في الترتيب بعد."
     },
@@ -142,7 +142,7 @@ const progressCopy = {
       loadError: "Nepodařilo se načíst",
       signOut: "Odhlásit se",
       retry: "Zkusit znovu",
-      topTen: "Světová top 10",
+      topThree: "Světová top 3",
       leaderLoading: "Načítání žebříčku…",
       leaderEmpty: "V žebříčku zatím nejsou hráči."
     },
