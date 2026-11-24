@@ -1,10 +1,19 @@
 const streakThresholds = [5, 10, 15, 25, 35, 50, 75, 100, 150, 195];
 const playtimeMinutes = [5, 15, 30, 60, 120, 240, 480, 960, 1800, 3600];
+const streakBadgeStep = 5;
+
+function rewardIcon(kind, level, size = '') {
+  if (!level) return '<span class="reward-icon reward-empty '+size+'" aria-hidden="true">–</span>';
+  const symbols = ['✦','◆','★','✿','✪'];
+  const color = Math.min(4, Math.floor((level-1)/(kind==='badge'?8:2)));
+  const symbol = kind==='badge'?level:kind==='final'?'★':symbols[color];
+  return '<span class="reward-icon reward-'+kind+' reward-color-'+color+' '+size+'" aria-hidden="true">'+symbol+'</span>';
+}
 
 function playerRewards(streak, lifetimeMs, questionCount) {
   const streakTitles = streakThresholds.filter(threshold => streak >= threshold).length;
   const timeTitles = playtimeMinutes.filter(minutes => lifetimeMs >= minutes * 60000).length;
-  const streakBadges = Math.floor(Math.min(streak, questionCount) / 5);
+  const streakBadges = Math.floor(Math.min(streak, questionCount) / streakBadgeStep);
   const finalBadge = streak >= questionCount;
   return {streakTitles, timeTitles, streakBadges, finalBadge};
 }
@@ -40,4 +49,12 @@ const progressCopy = {
     time: ['První krok','Zvědavý hráč','Cestovatel','Dobrodruh','Průzkumník','Zkušený cestovatel','Světoběžník','Mistr atlasu','Veterán','Věčný poutník'],
     rules: ['Vyber zemi podle vlajky nebo vlajku podle země. Na otázku máš 10 sekund. Chyba nebo vypršení času ukončí sérii.','Správná odpověď do 500 ms přinese trojnásobek bodů, do jedné sekundy dvojnásobek. Některé otázky mají bonus. Dokončením série získáš desetinásobek jejích bodů.','Na tomto zařízení můžeš hrát 30 minut za 24 hodin. Za každých pět správných odpovědí v řadě získáš odznak a za celou sérii další. Tituly se odemykají podle nejlepší série a zaznamenaného herního času.','Přezdívka musí mít 3–20 písmen nebo číslic. Urážky, nenávistné projevy a nevhodné přezdívky jsou zakázány. Heslo nového účtu musí mít alespoň šest znaků.']
   }
+};
+
+const rulesDetails = {
+  tr: ['Cevaplanan soru','Rozet ilerlemesi','Her yeni oyun sıfır doğru cevapla başlar. Kazandığın puanlar, unvanlar ve rozetler hesabında birikir.','Süreye ekranda açık olan sorular dahildir. Geçmiş turlarda yalnızca doğru cevap sayısı kayıtlıysa, soru toplamına o sayı eklenir.','üst üste doğru'],
+  en: ['Questions answered','Badge progress','Each new game starts with zero correct answers. You keep the points, titles and badges you have earned.','Playtime counts time spent on questions in the foreground. Older rounds contribute their recorded correct answers when only that count is available.','correct in a row'],
+  ru: ['Дано ответов','Прогресс значков','Каждая новая игра начинается с нуля верных ответов. Заработанные очки, звания и значки сохраняются в аккаунте.','Учитывается время на вопросы, пока игра открыта на экране. Если в старом раунде записаны только верные ответы, в итог входит их число.','верных подряд'],
+  ar: ['الأسئلة المجاب عنها','تقدّم الشارات','تبدأ كل لعبة جديدة من صفر إجابات صحيحة. يحتفظ حسابك بالنقاط والألقاب والشارات التي كسبتها.','يُحسب وقت الأسئلة أثناء ظهور اللعبة على الشاشة. إذا كانت الجولة القديمة تسجل الإجابات الصحيحة فقط، يُضاف عددها إلى الإجمالي.','إجابات صحيحة متتالية'],
+  cs: ['Zodpovězené otázky','Postup odznaků','Každá nová hra začíná s nulou správných odpovědí. Získané body, tituly a odznaky se ukládají na účet.','Herní čas se počítá u otevřených otázek, když je hra na obrazovce. Pokud má starší kolo uložený pouze počet správných odpovědí, přičte se tento počet.','správně za sebou']
 };
